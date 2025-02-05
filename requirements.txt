@@ -3,3 +3,5 @@ pyautogui
 streamlit
 numpy
 openpyxl
+ipykernel
+matplotlib
