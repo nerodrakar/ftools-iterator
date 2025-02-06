@@ -15,10 +15,13 @@ x_value = 10.00
 # Lista de valores para modificar a carga permanente
 loc = 400
 scale = 0.17 * loc
-N = 1
-carga_permanente = list(-np.abs(np.random.gumbel(loc, scale, N)))
-print(carga_permanente)
+N = 3
 
+loc_P = 255
+scale_P = 0.17 * loc_P
+
+loc_live = 36.35
+scale_live = 0.17 * loc_live
 
 # Função para ajustar coordenadas conforme a resolução da tela
 def ajustar_coordenadas(x_ref, y_ref):
@@ -40,21 +43,30 @@ botao_2_ajustado = ajustar_coordenadas(*botao_2)
 botao_3_ajustado = ajustar_coordenadas(*botao_3)
 botao_4_ajustado = ajustar_coordenadas(*botao_4)
 
-# Função para modificar o valor da carga permanente dentro do arquivo .ftl
-def modificar_ftl(arquivo, novo_valor):
+# Função para modificar o valor da carga dentro do arquivo .ftl
+def modificar_ftl(arquivo, valor_carga, valor_P, valor_exterior, valor_interior):
     caminho_arquivo = os.path.join(pasta_ftl, arquivo)
     with open(caminho_arquivo, "r") as file:
         linhas = file.readlines()
-
+    
     for i in range(len(linhas)):
         if "'Permanente'" in linhas[i]:  
             partes = linhas[i].split()
-            partes[-1] = str(novo_valor)  
+            partes[-1] = str(valor_carga)  
             linhas[i] = " ".join(partes) + "\n"
+            break
+        elif "'TB -" in linhas[i]:  # Verifica se o arquivo segue a outra estrutura
+            linhas[i] = f"'TB - {valor_carga}'\n"
+            linhas[i+3] = f"1.5  {valor_P}\n"
+            linhas[i+4] = f"3  {valor_P}\n"
+            linhas[i+5] = f"4.5  {valor_P}\n"
+            linhas[i+7] = f"{valor_exterior}\n"
+            linhas[i+8] = f"{valor_interior}\n"
             break
 
     with open(caminho_arquivo, "w") as file:
         file.writelines(linhas)
+
 
 # Função para salvar o resultado como .txt
 def salvar_resultado(nome_txt):
@@ -98,6 +110,8 @@ tempo_inicio = time.time()
 # Processamento dos arquivos
 for arquivo in os.listdir(pasta_ftl):
     if arquivo.endswith(".ftl") and "(permanente)" in arquivo:
+        carga_permanente = list(-np.abs(np.random.gumbel(loc, scale, N)))
+        print(carga_permanente)
         for valor in carga_permanente:
             print(f"Processando arquivo {arquivo} com valor {valor}...")
             modificar_ftl(arquivo, valor)
@@ -148,9 +162,14 @@ for arquivo in os.listdir(pasta_ftl):
         results_xm.to_excel("resultados_permanente_xm.xlsx", index=False)
 
     if arquivo.endswith(".ftl") and "(variavel)" in arquivo:
-        for valor in carga_permanente:
+        carga_tb = list(np.abs(np.random.gumbel(loc, scale, N)))
+        carga_P = -np.abs(np.random.gumbel(loc_P, scale_P))
+        carga_exterior = -np.abs(np.random.gumbel(loc_live, scale_live,))
+        carga_interior = -np.abs(np.random.gumbel(loc_live, scale_live))
+        print(f"Cargas TB: {carga_tb}\nCargas P: {carga_P}\nCargas Exterior: {carga_exterior}\nCargas Interior: {carga_interior}")
+        for valor in carga_tb:
             print(f"Processando arquivo {arquivo} com valor {valor}...")
-            modificar_ftl(arquivo, valor)
+            modificar_ftl(arquivo, valor, carga_P, carga_exterior, carga_interior)
 
             caminho_arquivo = os.path.join(pasta_ftl, arquivo)
             pyautogui.hotkey("ctrl", "o")
@@ -212,6 +231,7 @@ print("\n------------------------------------------------------")
 # Exibir a saída final
 for carga, df in dicionario_resultados.items():
     print(f"\nCarga: {carga}")
+    # print(df[df['x'] == x_value])
     print(df)
 
 print("Todos os arquivos foram processados!")
