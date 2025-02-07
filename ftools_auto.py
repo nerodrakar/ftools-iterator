@@ -163,11 +163,13 @@ for arquivo in os.listdir(pasta_ftl):
 
     if arquivo.endswith(".ftl") and "(variavel)" in arquivo:
         carga_tb = list(np.abs(np.random.gumbel(loc, scale, N)))
-        carga_P = -np.abs(np.random.gumbel(loc_P, scale_P))
-        carga_exterior = -np.abs(np.random.gumbel(loc_live, scale_live,))
-        carga_interior = -np.abs(np.random.gumbel(loc_live, scale_live))
-        print(f"Cargas TB: {carga_tb}\nCargas P: {carga_P}\nCargas Exterior: {carga_exterior}\nCargas Interior: {carga_interior}")
+        print(f"Cargas TB: {carga_tb}")
         for valor in carga_tb:
+            carga_P = -np.abs(np.random.gumbel(loc_P, scale_P))
+            carga_exterior = -np.abs(np.random.gumbel(loc_live, scale_live,))
+            carga_interior = -np.abs(np.random.gumbel(loc_live, scale_live))
+            print(f"Cargas P: {carga_P}\nCargas Exterior: {carga_exterior}\nCargas Interior: {carga_interior}")
+
             print(f"Processando arquivo {arquivo} com valor {valor}...")
             modificar_ftl(arquivo, valor, carga_P, carga_exterior, carga_interior)
 
