@@ -15,7 +15,7 @@ x_value = 10.00
 # Lista de valores para modificar a carga permanente
 loc = 400
 scale = 0.17 * loc
-N = 3
+N = 1
 
 loc_P = 255
 scale_P = 0.17 * loc_P
@@ -44,7 +44,7 @@ botao_3_ajustado = ajustar_coordenadas(*botao_3)
 botao_4_ajustado = ajustar_coordenadas(*botao_4)
 
 # Função para modificar o valor da carga dentro do arquivo .ftl
-def modificar_ftl(arquivo, valor_carga, valor_P, valor_exterior, valor_interior):
+def modificar_ftl(arquivo, pasta_ftl, valor_carga, valor_P=None, valor_exterior=None, valor_interior=None):
     caminho_arquivo = os.path.join(pasta_ftl, arquivo)
     with open(caminho_arquivo, "r") as file:
         linhas = file.readlines()
@@ -69,7 +69,7 @@ def modificar_ftl(arquivo, valor_carga, valor_P, valor_exterior, valor_interior)
 
 
 # Função para salvar o resultado como .txt
-def salvar_resultado(nome_txt):
+def salvar_resultado(nome_txt, pasta_ftl):
     pyautogui.hotkey("alt", "f")
     time.sleep(1)
     pyautogui.press("e")  
@@ -84,7 +84,7 @@ def salvar_resultado(nome_txt):
     pyautogui.press("enter")
 
 # Função para carregar o arquivo .txt gerado para um dataframe
-def carregar_txt_para_dataframe(nome_txt):
+def carregar_txt_para_dataframe(nome_txt, pasta_ftl):
     file_path = os.path.join(pasta_ftl, nome_txt)
     if os.path.exists(file_path):
         with open(file_path, "r") as file:
@@ -101,7 +101,7 @@ def carregar_txt_para_dataframe(nome_txt):
 
 # Abrir o Ftool
 subprocess.Popen(ftool_path)
-time.sleep(5)
+time.sleep(10)
 
 dicionario_resultados = {}
 resultados_xm = []
@@ -114,7 +114,7 @@ for arquivo in os.listdir(pasta_ftl):
         print(carga_permanente)
         for valor in carga_permanente:
             print(f"Processando arquivo {arquivo} com valor {valor}...")
-            modificar_ftl(arquivo, valor)
+            modificar_ftl(arquivo, pasta_ftl, valor)
 
             caminho_arquivo = os.path.join(pasta_ftl, arquivo)
             pyautogui.hotkey("ctrl", "o")
@@ -132,10 +132,10 @@ for arquivo in os.listdir(pasta_ftl):
                 pyautogui.click(posicao_botao)
                 time.sleep(1)
                 nome_txt = arquivo.replace(".ftl", ".txt")
-                salvar_resultado(nome_txt + str(forca))
+                salvar_resultado(nome_txt + str(forca), pasta_ftl)
                 time.sleep(1)
                 
-                df_forca = carregar_txt_para_dataframe(nome_txt)
+                df_forca = carregar_txt_para_dataframe(nome_txt, pasta_ftl)
                 if isinstance(df_forca, pd.DataFrame):
                     df_forca["Forca"] = forca  
                     lista_df.append(df_forca)
@@ -156,11 +156,12 @@ for arquivo in os.listdir(pasta_ftl):
                 if y_bending_x is not None:
                     resultados_xm.append([valor, y_bending_x])
 
-        pyautogui.hotkey("alt", "f4")
+        # pyautogui.hotkey("alt", "f4")
         # Criar DataFrame com os resultados específicos
         results_xm = pd.DataFrame(resultados_xm, columns=["P", "m"])
         results_xm.to_excel("resultados_permanente_xm.xlsx", index=False)
 
+    time.sleep(2)
     if arquivo.endswith(".ftl") and "(variavel)" in arquivo:
         carga_tb = list(np.abs(np.random.gumbel(loc, scale, N)))
         print(f"Cargas TB: {carga_tb}")
@@ -171,7 +172,7 @@ for arquivo in os.listdir(pasta_ftl):
             print(f"Cargas P: {carga_P}\nCargas Exterior: {carga_exterior}\nCargas Interior: {carga_interior}")
 
             print(f"Processando arquivo {arquivo} com valor {valor}...")
-            modificar_ftl(arquivo, valor, carga_P, carga_exterior, carga_interior)
+            modificar_ftl(arquivo, pasta_ftl, valor, carga_P, carga_exterior, carga_interior)
 
             caminho_arquivo = os.path.join(pasta_ftl, arquivo)
             pyautogui.hotkey("ctrl", "o")
@@ -187,15 +188,16 @@ for arquivo in os.listdir(pasta_ftl):
             pyautogui.click(botao_4_ajustado)
             time.sleep(1)
 
+            resultados_xm = []
             # Processamento das forças com cliques ajustados
             for forca, posicao_botao in zip(["Shear", "Bending"], [botao_2_ajustado, botao_3_ajustado]):
                 pyautogui.click(posicao_botao)
                 time.sleep(1)
                 nome_txt = arquivo.replace(".ftl", ".txt")
-                salvar_resultado(nome_txt + str(forca))
+                salvar_resultado(nome_txt + str(forca), pasta_ftl)
                 time.sleep(1)
                 
-                df_forca = carregar_txt_para_dataframe(nome_txt)
+                df_forca = carregar_txt_para_dataframe(nome_txt, pasta_ftl)
                 if isinstance(df_forca, pd.DataFrame):
                     df_forca["Forca"] = forca  
                     lista_df.append(df_forca)
@@ -217,24 +219,24 @@ for arquivo in os.listdir(pasta_ftl):
                 if y_bending_x is not None:
                     resultados_xm.append([valor, y_bending_x, z_bending_x])
 
-        pyautogui.hotkey("alt", "f4")
+        # pyautogui.hotkey("alt", "f4")
         # Criar DataFrame com os resultados específicos
         results_xm = pd.DataFrame(resultados_xm, columns=["P", "m1", "m2"])
-        results_xm.to_excel("resultados_variavel_xm.xlsx", index=False)            
+        results_xm.to_excel("resultados_variavel_xm.xlsx", index=False)     
 
-
-
+pyautogui.hotkey("alt", "f4")
 tempo_fim = time.time()
 tempo_execucao = tempo_fim - tempo_inicio
-print(f"Tempo total de execução: {tempo_execucao:.2f} segundos")
+print("Todos os arquivos foram processados!")
+print(f"Tempo total de execução: {tempo_execucao:.2f} segundos")         
 
 print("\n------------------------------------------------------")
 
-# Exibir a saída final
-for carga, df in dicionario_resultados.items():
-    print(f"\nCarga: {carga}")
-    # print(df[df['x'] == x_value])
-    print(df)
+# # Exibir a saída final
+# for carga, df in dicionario_resultados.items():
+#     print(f"\nCarga: {carga}")
+#     # print(df[df['x'] == x_value])
+#     print(df)
 
-print("Todos os arquivos foram processados!")
-print(f"Tempo total de execução: {tempo_execucao:.2f} segundos")
+# print("Todos os arquivos foram processados!")
+# print(f"Tempo total de execução: {tempo_execucao:.2f} segundos")
